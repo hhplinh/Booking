@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -50,21 +48,28 @@ fun SeatScreen(
     onBack: () -> Unit = {},
     onContinue: () -> Unit = {}
 ) {
-    var seatMatrix by remember { mutableStateOf(Array(6) { Array(2) { 0 } }) }
-    var seatMatrix2 by remember { mutableStateOf(Array(6) { Array(2) { 0 } }) }
+    var seatMatrix by remember { mutableStateOf(Array(6) { Array(4) { 0 } }) }
+
+//    fun toggleSeat(rowIndex: Int, columnIndex: Int) {
+//        if (seatMatrix[rowIndex][columnIndex] == 0) { // If seat is available
+//            val updatedMatrix = seatMatrix.copyOf()
+//            updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
+//            updatedMatrix[rowIndex][columnIndex] = 1 // Mark as selected
+//            seatMatrix = updatedMatrix
+//        } else if (seatMatrix[rowIndex][columnIndex] == 1) { // If seat is selected
+//            val updatedMatrix = seatMatrix.copyOf()
+//            updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
+//            updatedMatrix[rowIndex][columnIndex] = 0 // Users un-select the seat
+//            seatMatrix = updatedMatrix
+//        }
+//    }
 
     fun toggleSeat(rowIndex: Int, columnIndex: Int) {
-        if (seatMatrix[rowIndex][columnIndex] == 0) { // If seat is available
-            val updatedMatrix = seatMatrix.copyOf()
-            updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
-            updatedMatrix[rowIndex][columnIndex] = 1 // Mark as selected
-            seatMatrix = updatedMatrix
-        } else if (seatMatrix[rowIndex][columnIndex] == 1) { // If seat is selected
-            val updatedMatrix = seatMatrix.copyOf()
-            updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
-            updatedMatrix[rowIndex][columnIndex] = 2 // Mark as unavailable
-            seatMatrix = updatedMatrix
-        }
+        val updatedMatrix = seatMatrix.copyOf()
+        updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
+        // Toggle the seat state between 0 (unselected) and 1 (selected)
+        updatedMatrix[rowIndex][columnIndex] = if (seatMatrix[rowIndex][columnIndex] == 0) 1 else 0
+        seatMatrix = updatedMatrix
     }
 
     fun getSelectedSeatNumbers(seatMatrix: Array<Array<Int>>): String {
@@ -106,10 +111,12 @@ fun SeatScreen(
                     )
             )
             {
-                Text(text = "1", color = Color.Black,
+                Text(
+                    text = "1", color = Color.Black,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp))
+                    modifier = Modifier.padding(16.dp)
+                )
 
             }
 
@@ -166,7 +173,6 @@ fun SeatScreen(
                 Spacer(modifier = Modifier.width(24.dp))
 
 
-
             }
 
             Row(modifier = Modifier.weight(1f, fill = false))
@@ -174,32 +180,6 @@ fun SeatScreen(
                 SeatSelectionMatrix(
                     seatMatrix = seatMatrix,
                     onSeatClick = ::toggleSeat,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
-
-                Column(modifier = Modifier.wrapContentWidth())
-                {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    for (i in 1..6)
-                    {
-                        Text(
-                            text = i.toString(),
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                        Spacer(modifier = Modifier.height(48.dp))
-                    }
-
-                }
-
-
-                SeatSelectionMatrix(
-                    seatMatrix = seatMatrix2,
-                    onSeatClick = { _, _ -> },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -216,6 +196,7 @@ fun SeatScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 )
                 {
+                    val selectedSeatNumbers = getSelectedSeatNumbers(seatMatrix)
 
                     Row(
                         modifier = Modifier
@@ -229,10 +210,6 @@ fun SeatScreen(
                             textColor = colorResource(id = R.color.darkGreen),
                             fontWeight = FontWeight.Medium
                         )
-
-                        val selectedSeatNumbers = getSelectedSeatNumbers(seatMatrix)
-                        //save to view model
-                        viewModel.updateSeatNumber(selectedSeatNumbers, 0)
 
                         CustomFrontText(
                             text = selectedSeatNumbers,
@@ -259,8 +236,14 @@ fun SeatScreen(
                             text = "$50.00", textColor = Color.Black, fontWeight = FontWeight.Bold
                         )
                     }
-                    ButtonWithTextAndIcon(text = "Continue",
-                        onClick = onContinue
+
+
+                    ButtonWithTextAndIcon(
+                        text = "Continue",
+                        onClick = {
+                            viewModel.addSeatNumber(selectedSeatNumbers)
+                            onContinue()
+                        }
                     )
                 }
             }
@@ -298,9 +281,10 @@ fun SeatSelectionMatrix(
     )
     {
         itemsIndexed(seatMatrix) { rowIndex, row ->
-            LazyRow(modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
+            LazyRow(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
             ) {
                 itemsIndexed(row) { columnIndex, state ->
                     val color = when (state) {
@@ -309,7 +293,7 @@ fun SeatSelectionMatrix(
                         else -> colorResource(id = R.color.pastelGreen) // Available
                     }
                     Box(modifier = Modifier
-                        .clickable(enabled = state == 0) {
+                        .clickable(enabled = (state != 2)) {
                             onSeatClick(
                                 rowIndex,
                                 columnIndex
@@ -320,6 +304,18 @@ fun SeatSelectionMatrix(
                         .padding(24.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
+
+                    if (columnIndex == 1) {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "${rowIndex + 1}",
+                            color = Color.Black,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                        Spacer(modifier = Modifier.width(48.dp))
+                    }
                 }
             }
         }
@@ -332,100 +328,3 @@ fun SeatSelectionMatrix(
 fun SeatScreenPreview() {
     SeatScreen()
 }
-
-//
-//@Composable
-//fun SeatScreen(
-//    viewModel: TransportBookingViewModel = viewModel()
-//) {
-//    var seatMatrix by remember { mutableStateOf(Array(6) { Array(2) { false } }) }
-//
-//    fun toggleSeat(rowIndex: Int, columnIndex: Int) {
-//        // Only allow changing the state if the seat is available (0) or selected (1)
-//        if ( ! seatMatrix[rowIndex][columnIndex]) {
-//            val updatedMatrix = seatMatrix.copyOf()
-//            updatedMatrix[rowIndex] = updatedMatrix[rowIndex].copyOf()
-//            updatedMatrix[rowIndex][columnIndex] = true // Mark as selected
-//            seatMatrix = updatedMatrix
-//        }
-//    }
-//
-//    Surface(
-//        modifier = Modifier.fillMaxSize(),
-//        color = colorResource(id = R.color.bg)
-//    )
-//    {
-//        Column {
-//            Column(
-//                modifier = Modifier
-//                    .padding(16.dp)
-//                    .verticalScroll(rememberScrollState())
-//                    .weight(weight = 1f, fill = false)
-//            )
-//            {
-//            SeatSelectionMatrix(
-//            }
-//        }
-//
-//    }
-//}
-////
-////@Composable
-////fun SeatSelectionMatrix(seatMatrix: Array<Array<Boolean>>, onSeatClick: (Int, Int) -> Unit) {
-////    LazyColumn(modifier = Modifier.padding(8.dp)) {
-////        itemsIndexed(seatMatrix) { rowIndex, row ->
-////            LazyRow(modifier = Modifier.padding(8.dp)) {
-////                itemsIndexed(row) { columnIndex, seat ->
-////                    Box(modifier = Modifier
-////                        .clickable {
-////                            onSeatClick(rowIndex, columnIndex)
-////                            Log.d("Seat", "Clicked on seat at row $rowIndex, column $columnIndex")
-////                            Log.d("ValueBoolean", "${seatMatrix[rowIndex][columnIndex]}")
-////                            Log.d("sseat", "$seat")
-////                        }
-////                        .padding(32.dp)
-////                        .clip(RoundedCornerShape(4.dp))
-////                        .background(
-////                            if (seat) colorResource(id = R.color.teal_700) else colorResource(
-////                                id = R.color.pastelGreen
-////                            )
-////                        )
-////                        .padding(16.dp))
-//////                        contentAlignment = Alignment.Center)
-////                }
-////            }
-////        }
-////    }
-////}
-//
-//
-//@Composable
-//fun SeatSelectionMatrix(seatMatrix: Array<Array<Int>>, onSeatClick: (Int, Int) -> Unit) {
-//    LazyColumn(modifier = Modifier.padding(8.dp)) {
-//        itemsIndexed(seatMatrix) { rowIndex, row ->
-//            LazyRow(modifier = Modifier.padding(8.dp)) {
-//                itemsIndexed(row) { columnIndex, state ->
-//                    val color = when (state) {
-//                        1 -> colorResource(id = R.color.peach) // Selected
-//                        2 -> colorResource(id = R.color.darkGreen) //Unavailable
-//                        else -> colorResource(id = R.color.pastelGreen) // Available
-//                    }
-//                    Box(modifier = Modifier
-//                        .clickable(enabled = state == 0) {
-//                            onSeatClick(rowIndex, columnIndex)
-//                        }
-//                        .padding(32.dp)
-//                        .clip(RoundedCornerShape(4.dp))
-//                        .background(color)
-//                        .padding(16.dp))
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Preview
-//@Composable
-//fun SeatScreenPreview() {
-//    SeatScreen()
-//}
