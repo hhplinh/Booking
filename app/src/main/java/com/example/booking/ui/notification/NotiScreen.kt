@@ -18,48 +18,6 @@ import com.example.booking.ui.notification.RetrofitInstance
 import com.example.booking.ui.notification.WeatherResponse
 import kotlinx.coroutines.launch
 
-//@Composable
-//fun WeatherInfo(location: String) {
-//    val weatherService = RetrofitInstance.weatherService
-//    val scope = rememberCoroutineScope()
-//    var weather by remember { mutableStateOf<WeatherApiResponse?>(null) }
-//    var isLoading by remember { mutableStateOf(true) }
-//    var errorMessage by remember { mutableStateOf<String?>(null) }
-//
-//    LaunchedEffect(location) {
-//        scope.launch {
-//            try {
-//                weather = weatherService.getCurrentWeather(apiKey = "e3b0256b41ef41e0b88163813241007", location = location)
-//                isLoading = false
-//            } catch (e: Exception) {
-//                errorMessage = e.localizedMessage ?: "Failed to load weather data"
-//                isLoading = false
-//            }
-//        }
-//    }
-//
-
-//@Composable
-//fun saveWeatherData(context: Context, weatherResponse: WeatherResponse) {
-//    val sharedPreferences = context.getSharedPreferences("WeatherData", Context.MODE_PRIVATE)
-//    val editor = sharedPreferences.edit()
-//    val gson = Gson()
-//    val json = gson.toJson(weatherResponse)
-//    editor.putString("lastWeatherData", json)
-//    editor.apply()
-//}
-//
-//@Composable
-//fun getSavedWeatherData(context: Context): WeatherResponse? {
-//    val sharedPreferences = context.getSharedPreferences("WeatherData", Context.MODE_PRIVATE)
-//    val gson = Gson()
-//    val json = sharedPreferences.getString("lastWeatherData", null)
-//    return if (json != null) {
-//        gson.fromJson(json, WeatherResponse::class.java)
-//    } else {
-//        null
-//    }
-//}
 @Composable
 fun CheckPermission() {
     val context = LocalContext.current
@@ -116,12 +74,12 @@ fun WeatherInfo(location: String) {
     } else {
         weather?.let {
             Column {
-                Text("Location: ${it.location}")
-                Text("Temperature: ${it.temperature}°C")
-                Text("Description: ${it.description}")
-                Text("Humidity: ${it.humidity}%")
-                Text("Pressure: ${it.pressure} hPa")
-                Text("Wind Speed: ${it.windSpeed} m/s")
+                Text("\nLocation: ${it.name}")
+                Text("Temperature: ${it.main.temp}°C")
+                Text("Description: ${it.weather.first().description}")
+                Text("Humidity: ${it.main.humidity}%")
+                Text("Wind Speed: ${it.wind.speed} m/s")
+
             }
         }
     }
@@ -133,7 +91,6 @@ fun NotiScreen() {
         CheckPermission()
         WeatherInfo(location = "London")
         WeatherInfo(location = "New York")
-        WeatherInfo(location = "Paris")
-        WeatherInfo(location = "Berlin")
+        WeatherInfo(location = "Ho Chi Minh City")
     }
 }
